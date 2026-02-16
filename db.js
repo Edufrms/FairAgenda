@@ -1,9 +1,9 @@
 
-const DB_KEY = 'fairagenda_data_v1';
+const DB_KEY = 'fairagenda_storage_v1';
 
 const getEmptyData = () => ({
-  userFairs: [], // Added manually by user or from pre-loaded
-  favorites: [], // fair IDs
+  userFairs: [],
+  favorites: [],
   exhibitors: [],
   meetings: [],
   notes: [],
@@ -12,7 +12,11 @@ const getEmptyData = () => ({
 
 export const db = {
   saveData: (data) => {
-    localStorage.setItem(DB_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.error("Error guardando datos localmente:", e);
+    }
   },
 
   getData: () => {
@@ -20,9 +24,8 @@ export const db = {
     return data ? JSON.parse(data) : getEmptyData();
   },
 
-  exportBackup: () => {
-    const data = localStorage.getItem(DB_KEY);
-    const blob = new Blob([data], { type: 'application/json' });
+  exportBackup: (data) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -34,15 +37,13 @@ export const db = {
   importBackup: (fileContent) => {
     try {
       const data = JSON.parse(fileContent);
-      // Basic validation
-      if (data && typeof data === 'object') {
-        localStorage.setItem(DB_KEY, JSON.stringify(data));
-        return true;
+      if (data && typeof data === 'object' && data.exhibitors) {
+        return data;
       }
-      return false;
+      return null;
     } catch (e) {
-      console.error("Error importando backup:", e);
-      return false;
+      console.error("Error al procesar el archivo de backup:", e);
+      return null;
     }
   },
 
